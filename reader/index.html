@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalized German graded readers</title>
+<meta name="description" content="A system that writes a new German story every day and plants the words that still need learning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
+<link rel="stylesheet" href="walk.css?v=20261116j">
+</head>
+<body>
+<div class="stage" id="stage">
+  <header class="bar">
+    <a class="home" href="../index.html?v=20261116j" aria-label="Homepage"><span>Homepage</span></a>
+    <button class="back" id="back" type="button" aria-label="Previous step">&larr;</button>
+    <nav class="rail" id="rail" aria-label="Steps"></nav>
+    <span class="count" id="count"></span>
+    <button class="next" id="next" type="button">Next</button>
+  </header>
+
+  <div class="caps" id="caps"></div>
+
+  <div class="viz" id="viz">
+    <canvas id="field" aria-hidden="true"></canvas>
+    <div class="tip" id="tip" hidden></div>
+
+    <!-- steps: goal, problem, solution. Each step adds one line. -->
+    <div class="panel intro" id="intro">
+      <div class="row" data-n="1"><span>Goal</span><h2>Become fluent in German.</h2></div>
+      <div class="row" data-n="2"><span>Problem</span><h2>The more words you know, the rarer the next ones are.</h2>
+        <p>Common words come up constantly, so they stick. Rare ones can go months without coming up.</p></div>
+      <div class="row" data-n="3"><span>Solution</span><h2>A new story every day, written to include those rare words.</h2>
+        <p>An automated system plants new and half-learned words, so they come up again and again.</p></div>
+    </div>
+
+    <!-- step: words in order of how common they are -->
+    <div class="axis" id="axis"><span>&larr; most common words</span><span>rarest words &rarr;</span></div>
+
+    <!-- steps: a sentence is assembled -->
+    <p class="sentence" id="sentence" lang="de"></p>
+
+    <!-- step: a page of the chapter -->
+    <article class="panel page" id="page" lang="de">
+      <p class="page-meta" lang="en">Sherlock Holmes · first chapter</p>
+      <p>Es war ein glühend heißer Tag im August, so heiß, dass die Baker Street aussah wie ein Backofen, in dem jemand das Brot vergessen hatte. Die Sonne brannte auf die gelben Steine des Hauses gegenüber, und man konnte nicht hinsehen, ohne dass einem die Augen wehtaten. Im Winter standen dieselben Wände im Nebel wie etwas aus einem bösen Traum. Jetzt waren sie einfach nur hell.</p>
+      <p>Wir hatten die [t1:Vorhänge] halb zugezogen. Holmes lag auf dem Sofa, zusammengerollt wie eine Katze, und las einen Brief, der mit der Morgenpost gekommen war. Er las ihn zum vierten Mal. Ich saß mit der Zeitung im Sessel und hatte nichts zu tun.</p>
+      <p>Die Hitze [t2:machte] [t2:mir] [t2:nichts] aus. Ich war Militärarzt in Indien gewesen, und wer dort einen Sommer überlebt hat, dem [t3:macht] ein Londoner August nichts mehr [t3:aus]. Aber die Zeitung war langweilig. Das Parlament hatte Sommerpause. Wer es sich leisten konnte, hatte die Stadt verlassen und war ans Meer oder aufs Land gefahren, und ich wäre gern mitgefahren, aber mein Konto gab den nötigen Betrag nicht her. Ich ließ den Urlaub ausfallen und sagte mir, dass ich ihn im September [new:nachholen] würde. Das sagt man sich.</p>
+    </article>
+
+    <!-- step: the real reader -->
+    <div class="panel app" id="app">
+      <div class="app-frame">
+        <div class="app-bar"><i></i><i></i><i></i><span>Lesezimmer</span><a class="app-home" href="../index.html?v=20261116j">&larr; Homepage</a><button type="button" id="appFull">Full screen</button></div>
+        <iframe id="appFrame" title="Lesezimmer, the reader" data-src="../lesezimmer/index.html?v=20261116j" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="words.js?v=20261116j"></script>
+<script src="walk.js?v=20261116j"></script>
+</body>
+</html>

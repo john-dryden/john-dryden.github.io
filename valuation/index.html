@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company valuation dashboard</title>
+<meta name="description" content="A dashboard that keeps a company valuation up to date by itself. It replaced a spreadsheet that was updated by hand.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="val.css?v=20261116j">
+</head>
+<body>
+<div class="stage" id="stage">
+  <header class="bar">
+    <a class="home" href="../index.html?v=20261116j" aria-label="Homepage"><span>Homepage</span></a>
+    <button class="back" id="back" type="button" aria-label="Previous step">&larr;</button>
+    <nav class="rail" id="rail" aria-label="Steps"></nav>
+    <span class="count" id="count"></span>
+    <button class="next" id="next" type="button">Next</button>
+  </header>
+
+  <div class="caps" id="caps"></div>
+
+  <div class="viz" id="viz">
+    <!-- steps 1-3: goal, problem, solution. Each step adds one line. -->
+    <div class="view intro" id="v-intro">
+      <div class="row" data-n="1"><span>Goal</span><h2>Know what a company is worth.</h2>
+        <p>Finance teams work it out by comparison: if similar companies sell for 17 times their yearly profit, this one probably does too. This method is called comps analysis.</p></div>
+      <div class="row" data-n="2"><span>Problem</span><h2>The comparison lived in one Excel file, updated by hand.</h2>
+        <p>Share prices and forecasts change all the time. Every change meant typing new numbers into the file.</p></div>
+      <div class="row" data-n="3"><span>Solution</span><h2>A dashboard that pulls the figures in by itself.</h2>
+        <p>52 companies, always current, with the analysis built in.</p></div>
+    </div>
+
+    <!-- steps 4-5: the same table, first as the spreadsheet typed by hand, then as the dashboard filling itself -->
+    <div class="view sheet" id="v-sheet">
+      <div class="win" id="win" data-mode="before">
+        <div class="chrome">
+          <div class="ch xl"><span class="xl-ic" aria-hidden="true"></span><b>Comps.xlsx</b><span class="tally"><b id="tallyA">0</b> of 52 companies updated</span></div>
+          <div class="ch db"><i class="gdot"></i><b>US Exchanges</b><span class="pill">9 of 52 companies shown</span><span class="chip" id="chip"><i></i><span><b id="tallyB">0</b> of 52 updated automatically</span></span></div>
+        </div>
+        <div class="fx"><span class="fx-ref" id="fxRef">B2</span><span class="fx-i">fx</span><span class="fx-v" id="fxVal"></span></div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+
+    <!-- step 6: what the same figures feed, named after the dashboard's own tabs -->
+    <div class="view extras" id="v-extras">
+      <div class="card" data-k="1"><span class="tab">Analysis &amp; charts</span>
+        <div class="card-v" id="chart"></div>
+        <p>Each dot is a company. Above the line: expensive for how fast it grows.</p></div>
+      <div class="card" data-k="2"><span class="tab">Valuation tool</span>
+        <div class="card-v vt">
+          <div class="vt-strip" id="strip"></div>
+          <div class="vt-sum"><span>a company's yearly profit</span><b>$1.0bn</b><span>&times; the median of similar companies</span><b id="vtMed"></b><span>= what it is worth</span><b class="big" id="vtOut"></b></div>
+        </div>
+        <p>Enter any company's figures and it is valued against similar companies.</p></div>
+      <div class="card" data-k="3"><span class="tab">Filings</span>
+        <div class="card-v fl" id="filings"></div>
+        <p>Every company's source documents, one click away.</p></div>
+    </div>
+
+    <!-- step 7: the dashboard itself -->
+    <div class="view app" id="v-app">
+      <div class="app-frame">
+        <div class="app-bar"><i></i><i></i><i></i><span>Comparable Company Analysis</span><a class="app-home" href="../index.html?v=20261116j">&larr; Homepage</a><button type="button" id="appFull">Full screen</button></div>
+        <iframe id="appFrame" title="Comparable company analysis dashboard" data-src="dashboard/index.html?v=20261116j" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="val.js?v=20261116j"></script>
+</body>
+</html>

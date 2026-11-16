@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>John Dryden</title>
+<meta name="description" content="Three projects from 2026: German stories built from the words a learner knows, Providence, a tool that shows how far an AI test score can be trusted, and a dashboard that values a company by comparing it with similar ones.">
+<meta property="og:title" content="John Dryden: three projects from 2026">
+<meta property="og:description" content="Personalized German graded readers, Providence, and a company valuation dashboard. Each one is a two-minute walkthrough.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://john-dryden.github.io/">
+<meta property="og:image" content="https://john-dryden.github.io/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700;800&family=Geist+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Manrope:wght@500;800&display=swap">
+<style>
+/* The front door: one half per project, each in the look of its own walkthrough. */
+:root { --pad: clamp(20px, 4vw, 56px); --narrow: calc(100vw / 3.16 - 2 * var(--pad));   /* --narrow: the text width of a door at its narrowest (another door hovered) */
+  --dark: #0b0b0c; --dark-fg: #f3f2ee; --dark-soft: #9b9a95; --light: #f6f5f1; --ink: #131312; --soft: #6a6963;
+  --pass: #17966a; --fail: #d8442f; --open: #d39a17; --ease: cubic-bezier(.2,.7,.2,1); }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--dark); font-family: "Geist", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+.doors { min-height: 100%; display: flex; }
+.door { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; padding: var(--pad); padding-top: clamp(84px, 14vh, 130px); text-decoration: none; overflow: hidden; transition: flex-grow .6s var(--ease); }
+.door:hover, .door:focus-visible { flex-grow: 1.16; outline: 0; }
+.door.de { background: var(--dark); color: var(--dark-fg); font-family: "Manrope", "Helvetica Neue", Arial, sans-serif; }
+.door.pv { background: var(--light); color: var(--ink); }
+.door.va { background: #1E2F4D; color: #f2f5f9; font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+.va h2 { font-weight: 700; letter-spacing: -.03em; } .va p { color: #a9b7cb; } .va .go { background: #f2f5f9; color: #1E2F4D; font-weight: 700; }
+.art { position: relative; flex: 1 1 0; min-height: 110px; max-height: 46vh; margin-bottom: clamp(22px, 4vh, 40px); pointer-events: none; }
+.de .art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.door > .num { margin-top: auto; }
+.num { font: 600 13px "Geist Mono", ui-monospace, Consolas, monospace; opacity: .55; margin-bottom: 14px; }
+h2 { margin: 0; font-weight: 800; font-size: clamp(20px, calc(var(--narrow) / 10.7), 46px); line-height: 1.04; letter-spacing: -.04em; white-space: nowrap; }
+.door p { margin: 14px 0 0; font-size: clamp(15px, 1.3vw, 19px); line-height: 1.4; width: min(34ch, var(--narrow)); }
+.de p { color: var(--dark-soft); font-weight: 500; } .pv p { color: var(--soft); }
+.why { display: block; margin-top: 12px; font-size: clamp(13px, 1.1vw, 15px); opacity: .8; }
+.go { display: inline-flex; align-items: center; gap: 10px; margin-top: clamp(20px, 4vh, 36px); font-weight: 800; font-size: 16px; border-radius: 999px; padding: 12px 22px; align-self: flex-start; transition: transform .25s var(--ease); }
+.de .go { background: var(--dark-fg); color: var(--dark); } .pv .go { background: var(--ink); color: var(--light); font-weight: 700; }
+.go i { font-style: normal; transition: transform .25s var(--ease); } .door:hover .go i, .door:focus-visible .go i { transform: translateX(5px); }
+
+/* the name sits across the top of both halves */
+.top { position: fixed; z-index: 2; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: baseline; padding: clamp(18px, 3vw, 34px) clamp(20px, 4vw, 56px); pointer-events: none; }
+.top b { font: 800 clamp(18px, 1.9vw, 24px) "Manrope", sans-serif; letter-spacing: -.02em; color: var(--dark-fg); }
+.top span { font: 400 13px "Geist Mono", ui-monospace, Consolas, monospace; color: #93a3ba; }
+
+/* Providence half: twelve answers and the range around their score, narrowing and widening */
+.pv .art { display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+.qs { display: grid; grid-template-columns: repeat(12, minmax(0, 30px)); gap: 7px; }
+.qs i { aspect-ratio: 1; border-radius: 50%; background: var(--pass); } .qs i:nth-child(8) { background: var(--fail); }
+.scale { position: relative; height: 40px; }
+.scale .track { position: absolute; left: 0; right: 0; top: 16px; height: 8px; border-radius: 4px; background: #dfddd4; }
+.scale .range { position: absolute; top: 10px; height: 20px; border-radius: 10px; left: 55.8%; width: 42.4%; background: var(--open); }
+.pv.run .scale .range { animation: narrow 5.6s var(--ease) 1; }
+.scale .point { position: absolute; top: 4px; left: 89%; width: 6px; height: 32px; margin-left: -3px; border-radius: 3px; background: var(--ink); }
+.scale .target { position: absolute; top: -2px; height: 44px; left: 81.25%; border-left: 2px dashed var(--ink); }
+/* valuation third: a small table on a light card whose cells fill themselves in */
+.va .art { display: flex; flex-direction: column; justify-content: center; }
+.mini { width: min(100%, 300px); background: #f5f7fa; border-radius: 12px; padding: 14px; box-shadow: 0 14px 40px -18px rgba(0,0,0,.6); }
+.mini-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; } .mini-top i { width: 8px; height: 8px; border-radius: 50%; background: #E9A83A; } .va.run .mini-top i { animation: live 5s linear 1; } .mini-top b { height: 7px; width: 34%; border-radius: 4px; background: #c9d2de; }
+.cells { display: grid; grid-template-columns: 1.7fr repeat(4, 1fr); gap: 6px; }
+.cells i { height: 11px; border-radius: 3px; background: #dfe5ec; } .cells i.name { background: #1E2F4D; opacity: .8; }
+.va.run .cells i:not(.name) { animation: fillc 5s linear 1; animation-delay: calc(var(--i) * 45ms); }
+@keyframes fillc { 0% { background: #dfe5ec; } 4% { background: #7fb2d6; } 10%, 80% { background: #2C6E9B; } 100% { background: #dfe5ec; } }
+@keyframes live { 0%, 8% { background: #E9A83A; } 30%, 84% { background: #2D7A4E; } 100% { background: #E9A83A; } }
+@keyframes narrow { 0%, 4% { left: 55.8%; width: 42.4%; background: var(--open); } 34%, 74% { left: 82.6%; width: 8.4%; background: var(--pass); } 100% { left: 55.8%; width: 42.4%; background: var(--open); } }
+
+@media (max-width: 760px) {
+  .doors { flex-direction: column; } .door { padding-top: 0; min-height: 50vh; justify-content: flex-end; } .door > .num { margin-top: 0; }
+  .door.de { padding-top: 74px; } .door .art { display: none; } .door:hover { flex-grow: 1; } .door { min-height: 0; padding-bottom: 34px; } .door.pv, .door.va { padding-top: 34px; }
+  .top span { display: none; } h2 { font-size: 27px; } .door p { width: auto; max-width: 34ch; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top"><b>John Dryden</b><span>three projects, 2026</span></header>
+<main class="doors">
+  <a class="door de" href="reader/index.html?v=20261116j">
+    <div class="art" aria-hidden="true"><canvas id="curve"></canvas></div>
+    <span class="num">01</span>
+    <h2>Personalized German<br>graded readers</h2>
+    <p>A system that writes German stories for one learner's exact vocabulary, and plants the words still to learn.
+      <span class="why">Built to learn German. The method works for any language.</span></p>
+    <span class="go">See how it works <i>&rarr;</i></span>
+  </a>
+  <a class="door pv" href="providence/index.html?v=20261116j">
+    <div class="art" aria-hidden="true">
+      <div class="qs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="scale"><div class="track"></div><div class="range"></div><div class="target"></div><div class="point"></div></div>
+    </div>
+    <span class="num">02</span>
+    <h2>Providence:<br>AI reliability testing</h2>
+    <p>Companies test AI before they rely on it. Providence shows how far a test score can be trusted.
+      <span class="why">A joint project with Alejandro Lizardi, who did the mathematics.</span></p>
+    <span class="go">See how it works <i>&rarr;</i></span>
+  </a>
+  <a class="door va" href="valuation/index.html?v=20261116j">
+    <div class="art" aria-hidden="true">
+      <div class="mini"><div class="mini-top"><i></i><b></b></div><div class="cells" id="cells"></div></div>
+    </div>
+    <span class="num">03</span>
+    <h2>Company valuation<br>dashboard</h2>
+    <p>Valuing a company means comparing it with similar ones. This dashboard keeps that comparison up to date by itself.
+      <span class="why">First built during a corporate-development internship, to replace a spreadsheet updated by hand.</span></p>
+    <span class="go">See how it works <i>&rarr;</i></span>
+  </a>
+</main>
+<script>
+/* The German half: every word as a dot, most common on the left, the way the walkthrough draws it.
+   Green = well remembered, amber = fading, dark = not learned yet. A drawing of the idea, not data. */
+(function () {   // door 3: the cells of the small table
+  var g = document.getElementById("cells"), h = "";
+  for (var r = 0; r < 6; r++) for (var c = 0; c < 5; c++) h += c ? '<i style="--i:' + (r * 4 + c) + '"></i>' : '<i class="name"></i>';
+  g.innerHTML = h;
+})();
+(function () {
+  /* Drawn straight onto the screen's own pixels: the canvas is always exactly as many pixels as it covers, so it is
+     never stretched (a door changes width when any door is hovered), and every dot is a whole number of pixels with
+     a whole-pixel gap, at any display scaling or zoom. The picture is laid out once for the widest the door gets;
+     a narrower door shows a little less of the tail. */
+  var cv = document.getElementById("curve"), cx = cv.getContext("2d"), art = cv.parentNode, door = art.parentNode;
+  var G = null, W = 0, H = 0, D = window.devicePixelRatio || 1, t0 = performance.now(), raf = 0;
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches; if (still) t0 = -1e6;
+  function shape(x) { return 0.012 + 0.988 / Math.pow(1 + x / 0.085, 1.6); }
+  function rnd(i) { var s = Math.sin(i * 12.9898) * 43758.5453; return s - Math.floor(s); }
+  // what a dot is: 0 not learned yet, 1 fading, 2 well remembered. `changed` holds the dots the animation has changed.
+  var COL = ["#45454d", "#e9c46a", "#58c4a0"], RGB = [[69, 69, 77], [233, 196, 106], [88, 196, 160]], NEW = [143, 193, 255], GLOW = [198, 244, 226], changed = {}, moving = {};
+  function state(c, r, x) {
+    var k = c * 977 + r * 131; if (changed[k]) return changed[k] - 1;
+    var known = rnd(k) > Math.pow(Math.max(0, (x - 0.12) / 0.7), 1.5), weak = rnd(k + 7) < 0.1 + x * 0.5;
+    return known ? (weak ? 1 : 2) : 0;
+  }
+  function blend(a, b, t) { return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * t) + "," + Math.round(a[1] + (b[1] - a[1]) * t) + "," + Math.round(a[2] + (b[2] - a[2]) * t) + ")"; }
+  /* One cycle: a handful of dots, one after another, slowly brighten above the rest and settle again. Five known
+     words glow, one word not learned yet turns the colour of a new word and then green, one fading word is
+     refreshed and one other begins to fade, so the picture keeps its balance. Slow and sparse on purpose: the
+     first version (some thirty quick white flashes every three seconds) read as glitter. */
+  function cycle(done) {
+    if (!G || !W || !H || still) { done(); return; }
+    var cell = G.cell, rows = Math.floor(H / cell), dark = [], fading = [], firm = [], now = performance.now(), i;
+    var seen = Math.min(G.cols, Math.floor((W - G.s) / cell));          // only dots that are on screen right now
+    for (var c = 0; c < seen; c++) {
+      var x = c / (G.cols - 1), hgt = Math.max(1, Math.round(rows * shape(x)));
+      for (var r = 0; r < hgt; r++) { var k = c * 977 + r * 131, st = state(c, r, x); if (moving[k]) continue;
+        (st === 0 ? dark : st === 1 ? fading : firm).push([rnd(k + 11 + turn) + (st === 0 ? x * 1.5 : 0), k]); }
+    }
+    turn += 17;
+    var by = function (a, b) { return a[0] - b[0]; }; dark.sort(by); fading.sort(by); firm.sort(by);
+    function go(list, n, make) { for (i = 0; i < Math.min(n, list.length); i++) { var m = make(list[i], i); moving[list[i][1]] = m; if (m.to !== m.from) changed[list[i][1]] = m.to + 1; } }
+    go(firm, 5, function (f, j) { return { t0: now + 200 + j * 720, from: 2, to: 2, lit: GLOW, up: 700, hold: 600, down: 1500, grow: 1 }; });            // known words, one after another
+    if (dark.length > 40) go(dark, 1, function () { return { t0: now + 1500, from: 0, to: 2, lit: NEW, up: 800, hold: 1700, down: 1600, grow: 1 }; });   // a new word
+    go(fading, 1, function () { return { t0: now + 2600, from: 1, to: 2, lit: GLOW, up: 800, hold: 500, down: 1500, grow: 1 }; });                        // refreshed
+    go(firm.slice(5), 1, function () { return { t0: now + 3200, from: 2, to: 1, lit: RGB[2], up: 1, hold: 200, down: 2400, grow: 0 }; });                 // starting to fade
+    if (!raf) raf = requestAnimationFrame(draw);
+    setTimeout(done, 6200 + 3000);                                       // the cycle, then a quiet pause before the next one
+  }
+  var turn = 0;
+  function plan() {
+    var d = D, cs = getComputedStyle(door), n = door.parentNode.children.length;
+    var total = door.parentNode.clientWidth, pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    var rest = total / n - pad, widest = total * 1.16 / (n - 1 + 1.16) - pad;
+    var cell = Math.max(Math.round(5 * d), Math.round(rest * d / 110)), gap = Math.max(2, Math.round(cell * 0.4));
+    G = { d: d, cell: cell, s: cell - gap, cols: Math.max(2, Math.floor(widest * d / cell)) };
+  }
+  function draw() {
+    raf = 0; if (!G || !W || !H) return;
+    var now = performance.now(), el = now - t0, busy = false, cell = G.cell, s = G.s, gapPx = cell - s, rows = Math.floor(H / cell);
+    cx.clearRect(0, 0, W, H);
+    for (var c = 0; c < G.cols; c++) {
+      var edge = Math.min(1, (W - c * cell - s) / (cell * 5)); if (edge <= 0) break;      // the last few columns fade out at the door's edge
+      var x = c / (G.cols - 1), hgt = Math.max(1, Math.round(rows * shape(x)));
+      for (var r = 0; r < hgt; r++) {
+        var k = c * 977 + r * 131, a = Math.max(0, Math.min(1, (el - x * 700 - rnd(k + 3) * 300) / 500));
+        if (a < 1) busy = true; if (!a) continue;
+        var st = state(c, r, x), m = moving[k], grow = 0, col = COL[st];
+        if (m) {                                  // a dot in the middle of changing: it lights up, holds, then settles
+          var t = now - m.t0;
+          if (t >= m.up + m.hold + m.down) { delete moving[k]; }
+          else if (t >= 0) {
+            busy = true;
+            var up = Math.min(1, t / m.up), dn = Math.max(0, Math.min(1, (t - m.up - m.hold) / m.down));
+            col = dn > 0 ? blend(m.lit, RGB[m.to], dn) : blend(RGB[m.from], m.lit, up);
+            grow = m.grow ? Math.round((up - dn) * Math.max(1, gapPx / 2)) : 0;
+          } else { busy = true; col = COL[m.from]; }
+        }
+        cx.globalAlpha = a * edge; cx.fillStyle = col;
+        cx.fillRect(c * cell - grow, H - (r + 1) * cell + Math.round((1 - a) * 8 * G.d) - grow, s + 2 * grow, s + 2 * grow);
+      }
+    }
+    cx.globalAlpha = 1; if (busy && !raf) raf = requestAnimationFrame(draw);
+  }
+  function fit(es) {
+    var e = es[0], d = window.devicePixelRatio || 1, w, h;
+    if (e.devicePixelContentBoxSize) { w = e.devicePixelContentBoxSize[0].inlineSize; h = e.devicePixelContentBoxSize[0].blockSize; }
+    else { w = Math.round(e.contentRect.width * d); h = Math.round(e.contentRect.height * d); }
+    if (w !== W || h !== H) { W = w; H = h; cv.width = w; cv.height = h; }
+    if (e.contentRect.width > 0) d = w / e.contentRect.width;      // the real number of screen pixels per unit, measured
+    if (!G || Math.abs(D - d) > 0.01) { D = d; plan(); }
+    draw();
+  }
+  window.__curveCycle = cycle;
+  plan();
+  var ro = new ResizeObserver(fit);
+  try { ro.observe(art, { box: "device-pixel-content-box" }); } catch (err) { ro.observe(art); }
+  window.addEventListener("resize", function () { plan(); draw(); });
+})();
+
+/* The three titles start on one line across the page: the text under each title is given the height of the longest of the three. */
+(function () {
+  var ps = [].slice.call(document.querySelectorAll(".door p"));
+  function level() {
+    ps.forEach(function (p) { p.style.minHeight = ""; });
+    if (window.innerWidth <= 760) return;
+    var h = Math.max.apply(null, ps.map(function (p) { return p.getBoundingClientRect().height; }));
+    ps.forEach(function (p) { p.style.minHeight = Math.ceil(h) + "px"; });
+  }
+  level(); window.addEventListener("resize", level); window.addEventListener("load", level);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(level);
+})();
+
+/* Each door's picture moves only while the pointer (or keyboard focus) is on that door. A cycle that has started
+   always runs to its end, and a new one starts only if the pointer is still there. Without a mouse it just loops. */
+(function () {
+  var noHover = window.matchMedia("(hover: none)").matches;
+  function wire(door, start) {
+    var over = noHover, running = false;
+    function run() { if (running || !over) return; running = true; start(function () { running = false; setTimeout(run, 700); }); }
+    door.addEventListener("pointerenter", function () { over = true; run(); });
+    door.addEventListener("pointerleave", function () { over = noHover; });
+    door.addEventListener("focus", function () { over = true; run(); });
+    door.addEventListener("blur", function () { over = noHover; });
+    if (noHover) setTimeout(run, 1200);
+  }
+  function cssCycle(door, lastEl) {           // a cycle made of CSS animations: runs while the door has the class, ends with its last element
+    return function (done) {
+      var end = function (e) { if (e.target !== lastEl) return; lastEl.removeEventListener("animationend", end); door.classList.remove("run"); done(); };
+      lastEl.addEventListener("animationend", end); door.classList.add("run");
+    };
+  }
+  var de = document.querySelector(".door.de"), pv = document.querySelector(".door.pv"), va = document.querySelector(".door.va");
+  wire(de, function (done) { window.__curveCycle(done); });
+  wire(pv, cssCycle(pv, pv.querySelector(".range")));
+  wire(va, cssCycle(va, va.querySelector(".cells i:last-child")));
+})();
+</script>
+</body>
+</html>

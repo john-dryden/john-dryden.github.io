@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Providence, example dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700;800&family=Geist+Mono:wght@400;600&display=swap">
+<style>
+/* A small demo of what a Providence dashboard shows, with example data and plain-English verdicts.
+   Every range, verdict and "how many more questions" figure is computed by ../stats.js. */
+:root {
+  color-scheme: dark;
+  --bg: #101011; --panel: #18181a; --panel2: #1f1f22; --line: #2b2b2f; --fg: #f1f0ea; --soft: #a09f98; --faint: #6b6a65;
+  --pass: #2fb586; --fail: #ea6450; --open: #e3ac33;
+  --font: "Geist", "Helvetica Neue", Arial, sans-serif; --mono: "Geist Mono", ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { scrollbar-color: #3a3a3e transparent; scrollbar-width: thin; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+
+/* entry screen */
+.gate { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: var(--bg); transition: opacity .6s ease; }
+.gate.gone { opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s .6s; }
+.gate canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* after "View the live demo": the button and the line step back and the falling text takes over for a moment */
+.gate-box p, .enter { transition: opacity .3s ease, background-color .2s ease, border-color .2s ease, transform .15s ease; }
+.gate.loading .gate-box p, .gate.loading .enter { opacity: 0; pointer-events: none; }
+.gate.loading .word { text-shadow: 0 0 28px var(--bg), 0 0 12px var(--bg); }
+.gate-box { position: relative; text-align: center; padding: 24px; }
+.word { font: 400 clamp(40px, 7vw, 76px) var(--mono); letter-spacing: -.06em; margin: 0; }
+.gate p { margin: 10px 0 34px; color: var(--soft); font-size: clamp(15px, 1.6vw, 19px); }
+.enter { border: 1px solid #45454b; background: rgba(24,24,26,.86); border-radius: 12px; padding: 15px 30px; font-weight: 700; font-size: 17px; transition: background-color .2s ease, border-color .2s ease, transform .15s ease; }
+.enter:hover { background: #26262a; border-color: #6a6a72; transform: translateY(-1px); }
+
+/* dashboard */
+.dash { min-height: 100%; display: flex; flex-direction: column; }
+.top { display: flex; align-items: center; gap: 14px; padding: 16px clamp(16px, 4vw, 40px); border-bottom: 1px solid var(--line); }
+.logout { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700; color: var(--soft); transition: color .2s ease, border-color .2s ease; } .logout:hover { color: var(--fg); border-color: #55555c; }
+.top b { font: 400 22px var(--mono); letter-spacing: -.06em; } .top span { font: 400 12px var(--mono); color: var(--faint); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+main { flex: 1; width: min(1060px, 100%); margin: 0 auto; padding: clamp(18px, 4vh, 40px) clamp(16px, 4vw, 40px) 60px; }
+h1 { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; letter-spacing: -.035em; }
+.sub { margin: 8px 0 0; color: var(--soft); font-size: 17px; }
+.chip { display: inline-block; font-style: normal; font-weight: 700; font-size: 13px; padding: 5px 11px; border-radius: 999px; color: #0d0d0e; background: var(--open); white-space: nowrap; }
+.chip.pass { background: var(--pass); } .chip.fail { background: var(--fail); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; margin-top: clamp(18px, 4vh, 34px); }
+.card { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 10px; transition: border-color .2s ease, transform .2s ease, background-color .2s ease; }
+.card:hover { border-color: #55555c; background: var(--panel2); transform: translateY(-2px); }
+.card h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; } .card .does { color: var(--soft); font-size: 15px; min-height: 2.6em; }
+.card .mini { display: flex; gap: 6px; margin: 6px 0 2px; } .card .mini i { width: 14px; height: 14px; border-radius: 50%; background: var(--open); } .card .mini i.pass { background: var(--pass); } .card .mini i.fail { background: var(--fail); }
+.card .sum { color: var(--soft); font-size: 14px; } .card .open { margin-top: 6px; font-weight: 700; font-size: 14px; }
+.card .ver { font: 400 12px var(--mono); color: var(--faint); }
+
+.backlink { background: none; border: 0; padding: 0; color: var(--soft); font-size: 14px; margin-bottom: 14px; } .backlink:hover { color: var(--fg); }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; }
+.tabs { margin-left: auto; display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.tabs button { border: 0; background: none; border-radius: 7px; padding: 6px 12px; font: 600 13px var(--mono); color: var(--soft); } .tabs button.on { background: var(--fg); color: #0d0d0e; }
+.banner { margin-top: 20px; display: flex; align-items: center; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font-size: 17px; }
+.tests { margin-top: 16px; display: grid; gap: 10px; }
+.test { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1.1fr) 92px minmax(0, 1.25fr) 124px; gap: 6px 18px; align-items: center; }
+.test h3 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; } .test .what { color: var(--soft); font-size: 13px; margin-top: 2px; }
+.test .frac { font-size: 14px; color: var(--soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.test .chipcell { text-align: right; }
+.bar { position: relative; height: 34px; }
+.bar .track { position: absolute; left: 0; right: 0; top: 14px; height: 6px; border-radius: 3px; background: #2a2a2e; }
+.bar .range { position: absolute; top: 9px; height: 16px; border-radius: 8px; background: var(--open); opacity: .9; } .bar .range.pass { background: var(--pass); } .bar .range.fail { background: var(--fail); }
+.bar .point { position: absolute; top: 5px; width: 4px; height: 24px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
+.bar .target { position: absolute; top: 0; height: 34px; border-left: 2px dashed #8c8b85; }
+.test .why { grid-column: 1 / -1; font-size: 14px; color: var(--soft); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 6px; }
+.test .why b { color: var(--fail); font-weight: 700; } .test .why span { display: block; } .test .why span + span { margin-top: 4px; }
+.legend { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13px; color: var(--faint); }
+.legend i { display: inline-block; vertical-align: -2px; margin-right: 7px; } .legend .l-range { width: 22px; height: 10px; border-radius: 5px; background: var(--open); } .legend .l-point { width: 4px; height: 14px; border-radius: 2px; background: var(--fg); } .legend .l-target { width: 0; height: 14px; border-left: 2px dashed #8c8b85; }
+@media (max-width: 760px) {
+  .test { grid-template-columns: 1fr auto; } .test .bar { grid-column: 1 / -1; order: 3; } .test .frac { order: 2; grid-column: 1; } .test .chipcell { order: 1; }
+  .test .name { order: 0; } .test .why { order: 4; } .tabs { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <canvas id="rain" aria-hidden="true"></canvas>
+  <div class="gate-box">
+    <h1 class="word">providence</h1>
+    <p>Test results for AI systems, in plain words.</p>
+    <button class="enter" id="enter" type="button">View the live demo &rarr;</button>
+  </div>
+</div>
+
+<div class="dash">
+  <header class="top"><b>providence</b><span>example data</span><button class="logout" id="logout" type="button">Log out</button></header>
+  <main id="main"></main>
+</div>
+
+<script src="../stats.js?v=20261116j"></script>
+<script>
+(function () {
+  "use strict";
+  var S = window.PStats, main = document.getElementById("main");
+
+  // ---------------------------------------------------------------- example data
+  // Each test: name, what it checks, target, and [correct, questions] for every version.
+  var SYSTEMS = [
+    { id: "sorter", name: "Email sorter", does: "Sends each customer email to the right team.", versions: ["1.0", "1.1", "1.2", "1.3"], tests: [
+      ["Picks the right team", "Shipping, returns, billing, account or sales.", .85, [[16, 16], [16, 16], [9, 16], [13, 16]]],
+      ["Reads order numbers", "The order number is found and copied without mistakes.", .85, [[7, 8], [7, 8], [7, 8], [8, 8]]],
+      ["Spots urgent emails", "Emails that need an answer today are flagged.", .85, [[11, 12], [11, 12], [11, 12], [12, 12]]],
+      ["Recognises complaints", "A complaint is never filed as a simple question.", .85, [[30, 30], [30, 30], [30, 30], [30, 30]]],
+      ["Handles emails in German", "German emails are sorted as well as English ones.", .80, [[24, 24], [24, 24], [24, 24], [24, 24]]],
+      ["Keeps spam out", "Advertising and spam do not reach any team.", .85, [[48, 50], [48, 50], [48, 50], [48, 50]]]
+    ] },
+    { id: "invoice", name: "Invoice reader", does: "Pulls totals, dates and suppliers out of invoices.", versions: ["2.4"], tests: [
+      ["Reads the total", "The amount matches the invoice.", .90, [[196, 200]]],
+      ["Reads the date", "Day, month and year are correct.", .90, [[291, 300]]],
+      ["Finds the supplier", "The company name matches the records.", .90, [[191, 200]]]
+    ] },
+    { id: "summary", name: "Meeting summarizer", does: "Writes a summary after each call.", versions: ["0.9"], tests: [
+      ["Mentions every decision", "Nothing that was agreed is missing.", .85, [[18, 20]]],
+      ["Invents nothing", "Every statement was said in the call.", .85, [[19, 20]]],
+      ["Stays under one page", "The summary fits the length limit.", .85, [[15, 15]]]
+    ] }
+  ];
+
+  // ---------------------------------------------------------------- reading the numbers
+  var LO = 20;
+  function pos(f) { return (Math.max(LO, Math.min(100, f * 100)) - LO) / (100 - LO) * 100; }
+  function pct(f) { return Math.round(f * 100) + "%"; }
+  function num(n) { return n.toLocaleString("en-US"); }
+  function luck(p) { var x = Math.round(p * 100); return p < 0.01 ? "less than 1 time in 100" : "about " + x + " times in 100"; }
+  var LABEL = { pass: "Passes", "open-pass": "Probably passes", "open-fail": "Probably fails", fail: "Fails" };
+  function tone(v) { return v === "pass" ? "pass" : v === "fail" || v === "open-fail" ? "fail" : ""; }
+
+  function read(sys, vi) {                               // everything shown for one version of one system
+    var prevP = [], tests = sys.tests.map(function (t) {
+      var k = t[3][vi][0], n = t[3][vi][1], w = S.wilson(k, n), v = S.verdict(k, n, t[2]), need = S.needed(k, n, t[2]);
+      var o = { name: t[0], what: t[1], target: t[2], k: k, n: n, lo: w[0], hi: w[1], v: v, more: need == null ? null : need - n };
+      if (vi > 0) { o.pk = t[3][vi - 1][0]; o.pn = t[3][vi - 1][1]; o.p = S.fisher(o.pk, o.pn, k, n); prevP.push(o.p); }
+      return o;
+    });
+    if (vi > 0) { var adj = S.holm(prevP); tests.forEach(function (o, i) { o.flag = adj[i] < 0.05 && o.k / o.n < o.pk / o.pn; }); }
+    tests.forEach(function (o, i) {                      // a test that was flagged in the version before: say whether it has recovered
+      if (vi > 1 && !o.flag) o.after = read1(sys, vi - 1, i) && o.k / o.n > o.pk / o.pn;
+    });
+    var bad = tests.filter(function (o) { return o.v === "fail" || o.v === "open-fail"; }), open = tests.filter(function (o) { return o.v === "open-pass"; });
+    var status = bad.length ? "fail" : open.length ? "open" : "pass";
+    return { tests: tests, status: status, bad: bad, open: open };
+  }
+  function read1(sys, vi, ti) {                          // was test ti flagged as a real drop in version vi?
+    if (vi < 1) return false;
+    var ps = sys.tests.map(function (t) { return S.fisher(t[3][vi - 1][0], t[3][vi - 1][1], t[3][vi][0], t[3][vi][1]); }), adj = S.holm(ps), t = sys.tests[ti][3];
+    return adj[ti] < 0.05 && t[vi][0] / t[vi][1] < t[vi - 1][0] / t[vi - 1][1];
+  }
+  var STATUS = { pass: "Ready", open: "Needs more test questions", fail: "Not ready" };
+  function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
+  function sentence(r) {
+    if (r.status === "pass") return "Every test passes, with enough questions to be sure.";
+    if (r.status === "open") return plural(r.open.length, "test") + (r.open.length === 1 ? " looks" : " look") + " fine, but with too few questions to be sure.";
+    return "“" + r.bad[0].name + "” is below its target" + (r.bad.length > 1 ? ", and so " + (r.bad.length === 2 ? "is 1 more test" : "are " + (r.bad.length - 1) + " more tests") : "") + ".";
+  }
+  function why(o, ver, prevVer) {
+    var out = [], t = pct(o.target);
+    if (o.v === "pass") out.push("Even at the low end of the range (" + pct(o.lo) + "), it is above the " + t + " target.");
+    if (o.v === "fail") out.push("Even at the high end of the range (" + pct(o.hi) + "), it is below the " + t + " target.");
+    if (o.v === "open-pass") out.push(plural(o.n, "question") + (o.n === 1 ? " is" : " are") + " too few to be sure." + (o.more ? " About " + num(o.more) + " more would settle it." : ""));
+    if (o.v === "open-fail") out.push("Below the " + t + " target, but " + plural(o.n, "question") + " are too few to be sure." + (o.more ? " About " + num(o.more) + " more would settle it." : ""));
+    if (o.flag) out.push("<b>Real drop.</b> It was " + o.pk + " of " + o.pn + " in version " + prevVer + ". Chance alone would cause a drop this size " + luck(o.p) + ".");
+    else if (o.after) out.push("Up from " + o.pk + " of " + o.pn + " in version " + prevVer + (o.p >= 0.05 ? ", but a rise this size could be chance (" + luck(o.p) + ")." : ". A rise this size is unlikely to be chance."));
+    return out.map(function (s) { return "<span>" + s + "</span>"; }).join("");
+  }
+
+  // ---------------------------------------------------------------- pages
+  function overview() {
+    var h = "<h1>AI systems</h1><p class='sub'>Each one is tested before a new version goes live.</p><div class='cards'>";
+    SYSTEMS.forEach(function (sys, i) {
+      var vi = sys.versions.length - 1, r = read(sys, vi);
+      h += "<button class='card' type='button' data-sys='" + i + "'><span class='ver'>version " + sys.versions[vi] + "</span><h2>" + sys.name + "</h2><span class='does'>" + sys.does + "</span>" +
+        "<span><i class='chip " + (r.status === "open" ? "" : r.status) + "'>" + STATUS[r.status] + "</i></span>" +
+        "<span class='mini'>" + r.tests.map(function (o) { return "<i class='" + tone(o.v) + "' title='" + o.name + "'></i>"; }).join("") + "</span>" +
+        "<span class='sum'>" + sentence(r) + "</span><span class='open'>Open &rarr;</span></button>";
+    });
+    main.innerHTML = h + "</div>";
+    [].forEach.call(main.querySelectorAll(".card"), function (c) { c.addEventListener("click", function () { detail(+c.getAttribute("data-sys")); }); });
+    window.scrollTo(0, 0);
+  }
+  function detail(si, vi) {
+    var sys = SYSTEMS[si]; if (vi == null) vi = sys.versions.length - 1; var r = read(sys, vi);
+    var h = "<button class='backlink' type='button' id='backlink'>&larr; All systems</button><div class='head'><div><h1>" + sys.name + "</h1><p class='sub'>" + sys.does + "</p></div>";
+    if (sys.versions.length > 1) h += "<div class='tabs' role='tablist' aria-label='Version'>" + sys.versions.map(function (v, i) { return "<button type='button' data-v='" + i + "' class='" + (i === vi ? "on" : "") + "'>v" + v + "</button>"; }).join("") + "</div>";
+    h += "</div><div class='banner'><i class='chip " + (r.status === "open" ? "" : r.status) + "'>" + STATUS[r.status] + "</i><span>Version " + sys.versions[vi] + ". " + sentence(r) + "</span></div><div class='tests'>";
+    r.tests.forEach(function (o) {
+      var c = o.v === "pass" ? " pass" : o.v === "fail" ? " fail" : "";
+      h += "<section class='test'><div class='name'><h3>" + o.name + "</h3><div class='what'>" + o.what + "</div></div><div class='frac'>" + o.k + " of " + o.n + " correct</div>" +
+        "<div class='bar'><div class='track'></div><div class='range" + c + "' style='left:" + pos(o.lo) + "%;width:" + (pos(o.hi) - pos(o.lo)) + "%'></div><div class='target' style='left:" + pos(o.target) + "%'></div><div class='point' style='left:" + pos(o.k / o.n) + "%'></div></div>" +
+        "<div class='chipcell'><i class='chip " + tone(o.v) + "'>" + LABEL[o.v] + "</i></div><div class='why'>" + why(o, sys.versions[vi], sys.versions[vi - 1]) + "</div></section>";
+    });
+    h += "</div><div class='legend'><span><i class='l-point'></i>score</span><span><i class='l-range'></i>range the real rate could be in</span><span><i class='l-target'></i>target</span></div>";
+    main.innerHTML = h;
+    document.getElementById("backlink").addEventListener("click", overview);
+    [].forEach.call(main.querySelectorAll(".tabs button"), function (b) { b.addEventListener("click", function () { detail(si, +b.getAttribute("data-v")); }); });
+    window.scrollTo(0, 0);
+  }
+  overview();
+
+  // ---------------------------------------------------------------- entry screen: falling characters
+  var gate = document.getElementById("gate"), cv = document.getElementById("rain"), cx = cv.getContext("2d"), cols = [], timer = 0, GL = "アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789%";
+  function size() {
+    var d = Math.min(window.devicePixelRatio || 1, 2); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; cx.setTransform(d, 0, 0, d, 0, 0);
+    cols = []; for (var x = 14; x < cv.clientWidth; x += 30) if (Math.random() < 0.62) cols.push(drop(x, true));
+  }
+  function drop(x, anywhere) {
+    var len = 6 + (Math.random() * 14 | 0), g = []; for (var i = 0; i < len; i++) g.push(GL[Math.random() * GL.length | 0]);
+    return { x: x + (Math.random() * 8 - 4), y: anywhere ? Math.random() * cv.clientHeight : -len * 15, v: 0.5 + Math.random() * 1.1, g: g, a: 0.16 + Math.random() * 0.3 };
+  }
+  function draw() {
+    cx.clearRect(0, 0, cv.clientWidth, cv.clientHeight); cx.font = "12px 'Geist Mono', Consolas, monospace"; cx.textAlign = "center";
+    cols.forEach(function (c, i) {
+      c.y += c.v; if (Math.random() < 0.03) c.g[Math.random() * c.g.length | 0] = GL[Math.random() * GL.length | 0];
+      for (var j = 0; j < c.g.length; j++) { cx.fillStyle = "rgba(150,142,235," + (c.a * (1 - j / c.g.length)).toFixed(3) + ")"; cx.fillText(c.g[j], c.x, c.y - j * 15); }
+      if (c.y - c.g.length * 15 > cv.clientHeight) cols[i] = drop(c.x, false);
+    });
+  }
+  size(); draw();
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) timer = setInterval(draw, 50);
+  window.addEventListener("resize", function () { if (!gate.classList.contains("gone")) { size(); draw(); } });
+  var moving = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* "View the live demo": the loading screen of the real dashboard, which shows the same falling text again from
+     the top. This is that drawing, taken from its source (MatrixCanvas in alejlizardi/providence-dashboard,
+     src/brand/marks.tsx) and not redesigned: one column every 13px, all falling at the same speed, each a bright
+     head with a trail that fades out, so a curtain comes down the screen and then single streaks keep falling.
+     The original moves 0.4 rows a frame; here it is stepped 120 times a second whatever the display, which is the
+     pace John saw it at. Nothing is loading. A click skips it. */
+  var raining = 0, endRain = null;
+  function burst() {
+    if (raining) return;
+    if (!moving) { gate.classList.add("gone"); clearInterval(timer); return; }
+    clearInterval(timer); gate.classList.add("loading");
+    var w = cv.clientWidth, h = cv.clientHeight, fs = 13, TICK = 1000 / 120, CH = "01ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜｲｸｺｿﾁ<>/=*+|";
+    var drops = [], n = Math.max(1, Math.floor(w / fs)), i;
+    for (i = 0; i < n; i++) drops.push(Math.random() * -40);
+    var fill = (h / fs + 40) * 2.5 * TICK;                         // when the last column has reached the bottom
+    var t0 = performance.now(), last = t0, owed = 0, LEN = Math.min(4200, fill + 1200), OUT = 700, stopAt = LEN;
+    endRain = function () { stopAt = Math.min(stopAt, performance.now() - t0); };
+    function tick() {                                              // one frame of the original
+      cx.fillStyle = "rgba(16,16,17,0.11)"; cx.fillRect(0, 0, w, h);
+      cx.font = fs + "px 'Geist Mono', Consolas, monospace"; cx.textAlign = "left";
+      for (var i = 0; i < drops.length; i++) {
+        var x = i * fs, y = drops[i] * fs;
+        cx.fillStyle = "rgba(154,160,255,0.46)"; cx.fillText(CH[Math.random() * CH.length | 0], x, y);          // the original draws at 0.92 on a layer shown at half strength
+        cx.fillStyle = "rgba(124,132,255,0.15)"; cx.fillText(CH[Math.random() * CH.length | 0], x, y - fs);
+        if (y > h && Math.random() > 0.972) drops[i] = Math.random() * -16;
+        drops[i] += 0.4;
+      }
+    }
+    (function frame(now) {
+      var el = now - t0; owed += Math.min(100, now - last); last = now;
+      for (var k = 0; owed >= TICK && k < 12; k++) { tick(); owed -= TICK; }
+      if (el >= stopAt && !gate.classList.contains("gone")) gate.classList.add("gone");   // the dashboard fades in under the rain
+      if (el < stopAt + OUT) raining = requestAnimationFrame(frame);
+      else { raining = 0; endRain = null; cx.clearRect(0, 0, w, h); gate.classList.remove("loading"); }
+    })(t0);
+  }
+  gate.addEventListener("click", function (e) { if (endRain && e.target.id !== "enter") endRain(); });
+  document.getElementById("enter").addEventListener("click", burst);
+  // "Log out" leads back to the entry screen
+  document.getElementById("logout").addEventListener("click", function () { overview(); cancelAnimationFrame(raining); raining = 0; endRain = null; gate.classList.remove("gone", "loading"); size(); draw(); clearInterval(timer); if (moving) timer = setInterval(draw, 50); });
+  if (/[?&]open/.test(location.search)) { gate.classList.add("gone"); clearInterval(timer); var m = /[?&]sys=(\d)(?:&v=(\d))?/.exec(location.search); if (m) detail(+m[1], m[2] == null ? undefined : +m[2]); }
+})();
+</script>
+</body>
+</html>

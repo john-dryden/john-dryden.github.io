@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesezimmer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<script>try { if (localStorage.getItem('light') === 'true') document.documentElement.classList.add('light'); } catch (e) {}</script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0f1116; --rail: #15181f; --surface: #1b1f27; --surface-2: #262b36; --line: #30363f;
+  --fg: #e6e8ee; --muted: #8b919e; --read: #eceef5; --stripe: #4a5162; --dot-a: #3a4150; --dot-b: #1f242d; --purple: #c9a0ff; --knob: #fff;
+  --blue: #579bfc; --green: #00c875; --orange: #fdab3d; --red: #e2445c; --yellow: #ffcb00; --new: #8fc1ff;
+  --font-ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-read: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+/* Light mode: warm paper, toggled from the rail, saved as localStorage 'light' */
+:root.light {
+  color-scheme: light;
+  --bg: #f4f1ea; --rail: #ebe7dd; --surface: #fffdf8; --surface-2: #eee9de; --line: #d9d3c6;
+  --fg: #1f2128; --muted: #6b6f7a; --read: #22242b; --stripe: #b9b2a3; --dot-a: #d9d3c6; --dot-b: #fffdf8; --purple: #7c4dd6; --knob: #fffdf8;
+  --blue: #2f6fd6; --green: #00a862; --orange: #e8901a; --red: #c8304a; --yellow: #ffd84d; --new: #1f5fc4;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+a { color: var(--blue); }
+button { font: inherit; }
+.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+.rail { background: var(--rail); border-right: 1px solid var(--line); padding: 22px 16px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); font-weight: 700; font-size: 18px; }
+.brand .dot { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, var(--dot-a), var(--dot-b)); border: 1px solid var(--line); flex: none; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--fg); text-decoration: none; font-weight: 500; }
+.nav a.active, .nav a:hover { background: var(--surface); }
+.nav .pill { margin-left: auto; font-size: 12px; background: var(--surface-2); padding: 1px 8px; border-radius: 999px; color: var(--muted); }
+.toggle { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; background: var(--surface); cursor: pointer; user-select: none; }
+.toggle .sw { width: 36px; height: 20px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.toggle .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--knob); transition: transform .15s; }
+.toggle.on .sw { background: var(--yellow); }
+.toggle.on .sw::after { transform: translateX(16px); }
+.toggle .t { font-size: 14px; font-weight: 500; }
+.toggle .d { font-size: 12px; color: var(--muted); }
+.stats { margin-top: auto; display: grid; gap: 8px; }
+.stat { background: var(--surface); border-radius: 10px; padding: 10px 12px; }
+.stat .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: 12px; color: var(--muted); }
+main { padding: 26px 24px 90px; min-width: 0; }
+.wrap { max-width: 78ch; margin: 0 auto; }
+.head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.head h1 { font-size: 24px; font-weight: 700; margin: 0; }
+.head .sub { color: var(--muted); }
+.head .spacer { flex: 1; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--surface-2); }
+.btn.green { background: var(--green); border-color: var(--green); color: #0b1a12; }
+.btn.green:hover { filter: brightness(1.08); }
+.btn:focus-visible, .w:focus-visible, .nav a:focus-visible, .toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.sync { margin-top: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.sync::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.sync.ok::before { background: #4caf7d; }
+.sync.off::before { background: var(--yellow); }
+.bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: #4caf7d; border-radius: 999px; }
+.bar > i.l { background: var(--yellow); }
+.drow { display: grid; grid-template-columns: minmax(0, 1fr) 160px 90px; gap: 14px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line); color: var(--fg); text-decoration: none; }
+.drow:first-child { border-top: 0; } .drow:hover { background: var(--surface-2); }
+.drow .t { font-weight: 600; } .drow .d { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.drow .pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; } .drow .pct small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 22px; }
+.chip2 { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 10px; font-size: 14px; display: inline-flex; gap: 8px; align-items: baseline; }
+.chip2 .g { font-size: 12px; color: var(--muted); }
+.chip2.known { opacity: .42; } .chip2.learning { border-color: var(--yellow); }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); background: var(--surface); }
+.legend i.k { opacity: .42; } .legend i.l { border-color: var(--yellow); }
+.notice { font-size: 13px; color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
+.group { margin-bottom: 28px; }
+.group-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.group-h .stripe { width: 6px; height: 22px; border-radius: 3px; background: var(--stripe); }
+.group-h h2 { font-size: 17px; margin: 0; font-weight: 700; }
+.group-h .n { color: var(--muted); font-size: 13px; }
+.board { background: var(--surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 56px 64px minmax(0, 1fr) 118px 96px 90px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.row.hdr { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-top: 0; background: var(--rail); }
+.row:not(.hdr):hover { background: var(--surface-2); }
+.row .num, .row .day { color: var(--muted); font-variant-numeric: tabular-nums; }
+.row .day { font-weight: 600; color: var(--fg); }
+.row .title { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .meta { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.status { display: inline-block; padding: 5px 0; width: 100%; text-align: center; border-radius: 6px; font-size: 13px; font-weight: 600; color: #0d1120; }
+.status.new { background: var(--line); color: var(--fg); }
+.status.started { background: var(--orange); }
+.status.done { background: var(--green); }
+.empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+.howto { font-size: 13px; color: var(--muted); margin-top: 22px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 36px clamp(18px, 5vw, 56px); }
+article { font-family: var(--font-read); font-size: 19.5px; line-height: 1.7; color: var(--read); }
+article h2 { font-family: var(--font-ui); font-size: 18px; margin: 1.6em 0 .6em; }
+article p { margin: 0 0 1.1em; }
+article p.pov { color: var(--muted); font-style: italic; }
+article hr { border: 0; border-top: 1px solid var(--line); margin: 2em auto; width: 30%; }
+article b.nw { color: var(--new); font-weight: 600; }
+.chat { margin: 1.3em 0; padding: 14px 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; font-family: var(--font-ui); font-size: 15px; line-height: 1.45; display: grid; gap: 10px; }
+.chat .sep { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chat .sep::before, .chat .sep::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.chat .msg { background: var(--surface-2); border-radius: 10px; padding: 8px 12px; max-width: 85%; }
+.chat .who { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.chat .who.c1 { color: var(--blue); } .chat .who.c2 { color: var(--green); } .chat .who.c3 { color: var(--orange); } .chat .who.c4 { color: var(--purple); } .chat .who.c5 { color: var(--red); }
+.w { border-radius: 3px; padding: 0 1px; margin: 0 -1px; }
+body.mark .w { cursor: pointer; transition: background .12s; }
+body.mark .w:hover, body.mark .w.hov { background: color-mix(in srgb, var(--yellow) 30%, transparent); }
+.w.on { background: var(--yellow); color: #1a1600; }
+/* {{Wort}}: a word only the story needs (period, rare): orange, dashed, "nicht minen" */
+article .so { color: var(--orange); text-decoration: underline dashed color-mix(in srgb, var(--orange) 70%, transparent); text-underline-offset: 4px; cursor: help; }
+.end .words span.so { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 50%, transparent); }
+.end .so-why { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+@media (prefers-reduced-motion: reduce) { .w { transition: none; } }
+.end { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 22px; font-family: var(--font-ui); font-size: 15px; }
+.end h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 20px 0 8px; }
+.words { display: flex; flex-wrap: wrap; gap: 8px; }
+.words span { background: var(--surface-2); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+.words span.f { background: var(--yellow); color: #1a1600; font-weight: 600; }
+.rowx { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.ok { color: var(--muted); font-size: 13px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+.chip b { background: var(--yellow); color: #1a1600; border-radius: 999px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; }
+.toast.show { opacity: 1; }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .rail { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; flex-wrap: wrap; padding: 12px 14px; }
+  .stats { display: none; }
+  .row { grid-template-columns: 44px minmax(0, 1fr) 100px; }
+  .row .meta, .row.hdr .meta, .row .day, .row.hdr .day { display: none; }
+  .card { padding: 22px 16px; }
+  article { font-size: 18px; }
+  main { padding: 18px 14px 80px; }
+}
+</style>
+
+</head>
+<body class="mark">
+<div class="app">
+  <aside class="rail">
+    <a class="brand" href="#" id="home-link"><span class="dot"></span>Lesezimmer</a>
+    <nav class="nav"><a href="#" id="nav-home" class="active">Folgen <span class="pill" id="nav-count">0</span></a><a href="#bereiche" id="nav-dom">Bereiche <span class="pill" id="dom-count">–</span></a></nav>
+    <div class="toggle on" id="marktoggle" role="switch" aria-checked="true" tabindex="0"><span class="sw"></span><span><div class="t">Stolperwörter markieren</div><div class="d"></div></span></div>
+    <div class="toggle" id="lighttoggle" role="switch" aria-checked="false" tabindex="0"><span class="sw"></span><span><div class="t">Heller Modus</div><div class="d">Helles Papier statt dunkel</div></span></div>
+    <div class="stats">
+      <div class="stat"><div class="v" id="st-read">0</div><div class="l">Folgen gelesen</div></div>
+      <div class="stat"><div class="v" id="st-words">0</div><div class="l">Wörter gelesen</div></div>
+      <div class="stat"><div class="v" id="st-flags">0</div><div class="l">Wörter markiert</div></div>
+    </div>
+    <div class="sync" id="sync">…</div>
+  </aside>
+  <main><div class="wrap" id="main"></div></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="demo-data.js?v=20261116j"></script>
+<script>
+/* Public demo: there is no server. Stories and marks come from demo-data.js; new marks stay in this browser. */
+(function () {
+  var D = window.DEMO, real = window.fetch.bind(window);
+  window.fetch = function (u, o) {
+    var p = typeof u === 'string' ? u : (u && u.url) || '';
+    if (p.indexOf('/api/') !== 0) return real(u, o);
+    var body = p === '/api/episodes' ? D.episodes : p === '/api/state' ? D.state : p === '/api/domains' ? [] : { ok: true };
+    return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  };
+  try { navigator.sendBeacon = function () { return true; }; } catch (e) {}
+  try { if (navigator.serviceWorker) navigator.serviceWorker.register = function () { return Promise.reject(new Error('demo')); }; } catch (e) {}
+})();
+</script>
+<style>#nav-dom { display: none !important; }</style>
+<style>
+:root { --bg: #0b0b0c; --rail: #111112; --surface: #19191b; --surface-2: #242427; --line: #2f2f33; --stripe: #4d4d54; --dot-a: #3d3d43; --dot-b: #1f1f22; }
+/* Nov 16: John asked for the list of chapters (everything under "Folgen") a little bigger. Only the list: a first
+   version enlarged the whole main part, and the chapter text became too big to read without constant scrolling.
+   The list is the view that contains a .group; the chapter text keeps the reader's own size. */
+@media (min-width: 1100px) { main:has(.group) { zoom: 1.2; } }
+</style>
+<script>
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const main = $('#main'), toast = $('#toast');
+  const state = { online: false, episodes: [], stumbles: {}, progress: {}, current: null, flags: {}, outbox: {}, flushing: false, mark: true };
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const say = (m) => { toast.textContent = m; toast.classList.add('show'); clearTimeout(say.t); say.t = setTimeout(() => toast.classList.remove('show'), 1800); };
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = (n) => Number(n || 0).toLocaleString('de-DE');
+  const api = (path, body) => fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true } : {}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+
+  // ---------- markdown-lite -> HTML ----------
+  // {{Wort}}: the tooltip is the word's gloss (story-only list of the chapter, or the series glossary: Siddhartha's Indian terms)
+  function soTitle(w) {
+    const e = state.episodes.find(x => x.id === state.current) || {}; const lw = w.toLowerCase();
+    const hit = (e.storyOnly || []).concat(e.terms || []).find(x => { const k = x.w.toLowerCase(); return k === lw || ['s', 'n', 'en', 'e'].some(end => lw === k + end); });
+    if (!hit) return 'Nur für die Geschichte – nicht minen';
+    return (e.terms || []).includes(hit) ? hit.why + ' · kein deutsches Wort, nicht minen' : hit.why + ' · nur für die Geschichte, nicht minen';
+  }
+  function inline(s) {
+    s = esc(s);
+    s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<b class="nw"><i>$1</i></b>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<b class="nw">$1</b>');
+    s = s.replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<i>$2</i>');
+    s = s.replace(/\{\{(.+?)\}\}/g, (m, w) => '<span class="so" title="' + esc(soTitle(w)) + '">' + w + '</span>');
+    return s;
+  }
+  const colorOf = (() => { const m = {}; let i = 0; return (name) => (m[name] ||= 'c' + (1 + (i++ % 5))); })();
+  function renderChat(lines) {
+    const out = []; let cur = null;
+    const flush = () => { if (cur) { out.push('<div class="msg"><div class="who ' + colorOf(cur.who) + '">' + esc(cur.who) + '</div><div class="txt">' + cur.lines.map(inline).join('<br>') + '</div></div>'); cur = null; } };
+    for (const raw of lines) {
+      const l = raw.trim();
+      if (/^@@\s*/.test(l)) { flush(); out.push('<div class="sep"><span>' + esc(l.replace(/^@@\s*/, '')) + '</span></div>'); continue; }
+      if (/^@\S/.test(l)) { flush(); cur = { who: l.slice(1).trim(), lines: [] }; continue; }
+      if (l === '') { flush(); continue; }
+      if (cur) cur.lines.push(l); else out.push('<div class="msg"><div class="txt">' + inline(l) + '</div></div>');
+    }
+    flush();
+    return '<div class="chat">' + out.join('') + '</div>';
+  }
+  function render(md) {
+    const lines = md.replace(/\r/g, '').split('\n');
+    const out = []; let para = [], quote = [];
+    const flushP = () => { if (!para.length) return; const t = para.join(' ').trim(); para = [];
+      if (/^\*\(.+\)\*$/.test(t)) out.push('<p class="pov">' + inline(t) + '</p>'); else out.push('<p>' + inline(t) + '</p>'); };
+    const flushQ = () => { if (!quote.length) return; out.push(renderChat(quote)); quote = []; };
+    for (const l of lines) {
+      if (/^>/.test(l)) { flushP(); quote.push(l.replace(/^>\s?/, '')); continue; } else flushQ();
+      if (/^<!--/.test(l)) continue;
+      if (/^#\s/.test(l)) { flushP(); continue; }
+      if (/^##\s/.test(l)) { flushP(); out.push('<h2>' + inline(l.replace(/^##\s/, '')) + '</h2>'); continue; }
+      if (/^---+\s*$/.test(l)) { flushP(); out.push('<hr>'); continue; }
+      if (l.trim() === '') { flushP(); continue; }
+      para.push(l);
+    }
+    flushP(); flushQ();
+    return out.join('\n');
+  }
+  const copyText = (txt, okMsg) => {
+    const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); say(okMsg); } catch (x) { say('Bitte markieren und kopieren'); } ta.remove(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => say(okMsg), fb); else fb();
+  };
+  function plainText(e) {
+    const lines = (e.body || '').replace(/\r/g, '').split('\n'); const out = []; let para = [];
+    const flushP = () => { if (para.length) { out.push(para.join(' ').trim()); para = []; } };
+    for (const l of lines) {
+      if (/^<!--/.test(l) || /^#\s/.test(l)) continue;
+      if (/^>/.test(l)) { flushP(); const t = l.replace(/^>\s?/, '').trim(); if (!t) { out.push(''); continue; } if (/^@@/.test(t)) out.push('— ' + t.replace(/^@@\s*/, '') + ' —'); else if (/^@\S/.test(t)) out.push(t.slice(1).trim() + ':'); else out.push(t); continue; }
+      if (/^---+\s*$/.test(l)) { flushP(); out.push('* * *'); continue; }
+      if (l.trim() === '') { flushP(); out.push(''); continue; }
+      para.push(l);
+    }
+    flushP();
+    return (e.title + '\n\n' + out.join('\n')).replace(/\*\*\*?([^*]+)\*\*\*?/g, '$1').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2').replace(/\{\{|\}\}/g, '').replace(/\n{3,}/g, '\n\n');
+  }
+  const WORD = /[A-Za-zÄÖÜäöüß]+(?:[-'’][A-Za-zÄÖÜäöüß]+)*/g;
+  function wrapWords(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    let i = 0; const occ = {};
+    for (const n of nodes) {
+      const text = n.nodeValue; WORD.lastIndex = 0; if (!WORD.test(text)) continue; WORD.lastIndex = 0;
+      const frag = document.createDocumentFragment(); let last = 0, m;
+      while ((m = WORD.exec(text))) {
+        if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const s = document.createElement('span'); s.className = 'w'; s.textContent = m[0]; const lw = m[0].toLowerCase(); occ[lw] = (occ[lw] || 0) + 1; s.dataset.k = lw + '#' + occ[lw]; s.dataset.i = i++;
+        frag.appendChild(s); last = m.index + m[0].length;
+      }
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      n.parentNode.replaceChild(frag, n);
+    }
+    return i;
+  }
+
+  // ---------- views ----------
+  function statusOf(e) { const p = state.progress[e.id] || {};
+    return p.finishedAt ? ['done', 'Gelesen'] : p.openedAt ? ['started', 'Am Lesen'] : ['new', 'Neu']; }
+  function updateStats() {
+    const eps = state.episodes; let read = 0, words = 0, flags = 0;
+    for (const e of eps) { const [s] = statusOf(e); if (s === 'done') { read++; words += Number(e.words || 0); } const st = state.stumbles[e.id]; if (st) flags += Object.keys(st.flags || {}).length; }
+    $('#st-read').textContent = read; $('#st-words').textContent = fmt(words); $('#st-flags').textContent = flags; $('#nav-count').textContent = eps.length;
+  }
+  function home() {
+    state.current = null; document.title = 'Lesezimmer'; updateStats();
+    const eps = state.episodes.slice().sort((a, b) => (a.series || '').localeCompare(b.series || '') || (a.day || 0) - (b.day || 0) || (a.number || 0) - (b.number || 0));
+    let html = '<div class="head"><h1>Folgen</h1></div>';
+    if (!state.online && !eps.length) html += '<div class="notice">Offline und noch nichts im Cache. Sobald der Server einmal lief, funktioniert die Seite auch ohne ihn.</div>';
+    if (!eps.length) { main.innerHTML = html + '<div class="board"><div class="empty">Noch keine Folgen.</div></div>'; return; }
+    const groups = {}; for (const e of eps) (groups[e.series || 'Sonstiges'] ||= []).push(e);
+    for (const [s, list] of Object.entries(groups)) {
+      html += '<section class="group"><div class="group-h"><span class="stripe"></span><h2>' + esc(s) + '</h2><span class="n">' + list.length + ' Folgen</span></div><div class="board">'
+        + '<div class="row hdr"><span>#</span><span class="day">Tag</span><span>Titel</span><span>Status</span><span class="meta">Wörter</span><span class="meta">Markiert</span></div>'
+        + list.map(e => { const [cls, label] = statusOf(e); const st = state.stumbles[e.id]; const n = st ? Object.keys(st.flags || {}).length : 0;
+          return '<a class="row" href="#' + esc(e.id) + '"><span class="num">' + String(e.number || '').padStart(2, '0') + '</span><span class="day">' + (e.day ? 'Tag ' + e.day : '') + '</span><span class="title">' + esc(e.title || e.id) + '</span><span class="status ' + cls + '">' + label + '</span><span class="meta">' + fmt(e.words) + '</span><span class="meta">' + (n || '–') + '</span></a>'; }).join('')
+        + '</div></section>';
+    }
+    main.innerHTML = html;
+  }
+  function openEpisode(id) {
+    const e = state.episodes.find(x => x.id === id); if (!e) { home(); return; }
+    state.current = id; state.flags = Object.assign({}, (state.stumbles[id] && state.stumbles[id].flags) || {});
+    document.title = e.title + ' · Lesezimmer';
+    const [cls, label] = statusOf(e);
+    main.innerHTML = '<div class="head"><button class="btn" id="back">← Folgen</button><h1>' + esc(e.title || '') + '</h1><span class="status ' + cls + '" style="width:auto;padding:5px 12px" id="stat">' + label + '</span><span class="spacer"></span><button class="btn" id="copytext">Text kopieren</button><span class="chip">markiert <b id="flagn">0</b></span></div>'
+      + '<div class="card"><article><p class="pov" style="margin-top:0">' + esc(e.series || '') + (e.day ? ' · Tag ' + e.day : '') + (e.number ? ' · Folge ' + e.number : '') + (e.date ? ' · ' + esc(e.date) : '') + '</p><div id="body"></div></article><div class="end" id="end"></div></div>';
+    $('#back').onclick = () => { location.hash = ''; };
+    $('#copytext').onclick = () => copyText(plainText(e), 'Text kopiert');
+    const body = $('#body'); body.innerHTML = render(e.body || '');
+    wrapWords(body);
+    const spans = [...body.querySelectorAll('.w')]; let migrated = false;
+    for (const k of Object.keys(state.flags)) {
+      const old = /^(\d+)-(.+)$/.exec(k); if (!old || spans.some(s => s.dataset.k === k)) continue;
+      const f = state.flags[k]; const lw = (f.w || old[2]).toLowerCase();
+      const hit = spans.find(s => s.dataset.i == old[1] && s.textContent.toLowerCase() === lw) || spans.find(s => s.textContent.toLowerCase() === lw && !state.flags[s.dataset.k]);
+      delete state.flags[k]; if (hit) { state.flags[hit.dataset.k] = Object.assign({}, f, { i: +hit.dataset.i }); migrated = true; }
+    }
+    // separable verbs: both halves share one flag, stored under the verb's key with w = infinitive (auffallen)
+    state.groups = {}; for (const g of (e.separables || [])) for (const k of g.keys) state.groups[k] = g;
+    // flags made on one half before pairing existed (or on the particle alone) become the pair's flag under its infinitive
+    for (const k of Object.keys(state.flags)) {
+      const g = state.groups[k]; if (!g || k === g.keys[0] && state.flags[k].keys) continue;
+      const f = state.flags[k]; delete state.flags[k];
+      if (!state.flags[g.keys[0]]) state.flags[g.keys[0]] = Object.assign({}, f, { w: g.lemma, keys: g.keys });
+      migrated = true;
+    }
+    for (const s of spans) { const f = state.flags[s.dataset.k]; if (f) { s.classList.add('on'); for (const k of (f.keys || [])) { const o = spans.find(x => x.dataset.k === k); if (o) o.classList.add('on'); } } }
+    if (migrated) scheduleSave();
+    updateCount();
+    body.addEventListener('click', ev => { if (!state.mark) return; const s = ev.target.closest('.w'); if (s) toggle(s); });
+    // hovering one half of a separable verb lights up the other half too
+    const mates = (s) => { const g = state.groups && state.groups[s.dataset.k]; return g ? g.keys.filter(k => k !== s.dataset.k).map(k => body.querySelector('.w[data-k="' + k + '"]')).filter(Boolean) : []; };
+    body.addEventListener('mouseover', ev => { const s = ev.target.closest('.w'); if (s) mates(s).forEach(m => m.classList.add('hov')); });
+    body.addEventListener('mouseout', ev => { const s = ev.target.closest('.w'); if (s) mates(s).forEach(m => m.classList.remove('hov')); });
+    renderEnd(e); markOpened(id);
+    const y = lsGet('scroll:' + id, 0); if (y) requestAnimationFrame(() => window.scrollTo(0, y));
+  }
+  function sentenceOf(span) {
+    const block = span.closest('p, .txt, h2') || span.parentElement; const t = block.textContent.replace(/\s+/g, ' ').trim();
+    // locate THIS span (not the first textual match: 'ein' also sits inside 'nein'), by the text before it in the block
+    const w = span.textContent; const r = document.createRange(); r.setStart(block, 0); r.setEnd(span, 0);
+    let at = r.toString().replace(/\s+/g, ' ').replace(/^ /, '').length; if (t.substr(at, w.length) !== w) at = t.indexOf(w); if (at < 0) return t.slice(0, 160);
+    let a = t.lastIndexOf('. ', at), b = t.indexOf('. ', at + w.length); a = a < 0 ? 0 : a + 2; b = b < 0 ? t.length : b + 1;
+    const s = t.slice(a, b).trim(); return s.length > 220 ? t.slice(Math.max(0, at - 90), at + w.length + 90).trim() : s;
+  }
+  function toggle(span) {
+    let k = span.dataset.k; const g = state.groups && state.groups[k];
+    const body = span.closest('article') || document;
+    const mates = g ? g.keys.map(x => body.querySelector('.w[data-k="' + x + '"]')).filter(Boolean) : [span];
+    if (g) k = g.keys[0];
+    if (state.flags[k]) { delete state.flags[k]; mates.forEach(m => m.classList.remove('on')); }
+    else {
+      // Migaku injects hidden translation text into the span; keep only the word itself
+      const clean = (el) => (el.firstChild && el.firstChild.nodeType === 3 ? el.firstChild.nodeValue : el.textContent).split(/[​­]/)[0].trim();
+      state.flags[k] = { w: g ? g.lemma : clean(span), i: +mates[0].dataset.i, s: sentenceOf(span), t: new Date().toISOString() };
+      if (g) { state.flags[k].keys = g.keys; state.flags[k].parts = mates.map(m => m.textContent); }
+      mates.forEach(m => m.classList.add('on'));
+    }
+    updateCount(); scheduleSave(); renderEnd(state.episodes.find(x => x.id === state.current));
+  }
+  function updateCount() { const n = $('#flagn'); if (n) n.textContent = Object.keys(state.flags).length; }
+  // ---------- storage: browser first, disk second ----------
+  // Every change lands in localStorage immediately (the page is the source of truth while open),
+  // goes into an outbox, and the outbox is pushed to the server whenever it answers. Nothing is ever lost
+  // because the server is down; it just reaches reader/data/ a bit later.
+  const LS = { stumbles: 'lzdemo2:stumbles', progress: 'lzdemo2:progress', outbox: 'lzdemo2:outbox' };
+  function persist() { lsSet(LS.stumbles, state.stumbles); lsSet(LS.progress, state.progress); lsSet(LS.outbox, state.outbox); }
+  function setSync(cls, text) { const el = $('#sync'); if (!el) return; el.className = 'sync ' + cls; el.textContent = text; }
+  function syncStatus() {
+    const n = Object.keys(state.outbox).length;
+    if (!state.online) setSync('off', n ? 'Offline · ' + n + ' Änderung' + (n === 1 ? '' : 'en') + ' im Browser gespeichert' : 'Offline · alles im Browser gespeichert');
+    else setSync(n ? '' : 'ok', n ? 'Wird gespeichert…' : 'Alles gespeichert');
+  }
+  function queue(kind, id, rec) {
+    state[kind][id] = rec; state.outbox[kind + '/' + id] = { kind, id, rec }; persist(); syncStatus(); flush();
+  }
+  function flush() {
+    if (state.flushing) return; state.flushing = true;
+    const keys = Object.keys(state.outbox);
+    (async () => {
+      for (const k of keys) {
+        const item = state.outbox[k]; if (!item) continue;
+        try { await api('/api/' + item.kind + '/' + item.id, item.rec); }
+        catch (e) { state.online = false; state.flushing = false; persist(); syncStatus(); clearTimeout(flush.t); flush.t = setTimeout(flush, 5000); return; }
+        if (state.outbox[k] === item) delete state.outbox[k];      // unchanged since we sent it
+      }
+      state.online = true; state.flushing = false; persist(); syncStatus(); updateStats();
+      if (Object.keys(state.outbox).length) flush();               // something was queued meanwhile
+    })();
+  }
+  window.addEventListener('online', flush);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) flush(); });
+  window.addEventListener('pagehide', () => {
+    for (const item of Object.values(state.outbox)) {
+      try { navigator.sendBeacon('/api/' + item.kind + '/' + item.id, new Blob([JSON.stringify(item.rec)], { type: 'application/json' })); } catch (e) {}
+    }
+  });
+  function scheduleSave() {
+    const id = state.current; if (!id) return;
+    const flags = JSON.parse(JSON.stringify(state.flags));
+    queue('stumbles', id, { episode: id, flags, count: Object.keys(flags).length, updatedAt: new Date().toISOString() });
+    updateStats();
+  }
+  function saveProgress(id, patch) {
+    const p = Object.assign({ episode: id, openedAt: null, finishedAt: null }, state.progress[id] || {}, patch, { updatedAt: new Date().toISOString() });
+    queue('progress', id, p); updateStats();
+  }
+  function markOpened(id) { if (state.progress[id] && state.progress[id].openedAt) return; saveProgress(id, { openedAt: new Date().toISOString() }); }
+  function finish(e) {
+    const done = state.progress[e.id] && state.progress[e.id].finishedAt;
+    saveProgress(e.id, { finishedAt: done ? null : new Date().toISOString() });
+    say(done ? 'Wieder auf „Am Lesen"' : 'Als gelesen gespeichert');
+    const [cls, label] = statusOf(e); const st = $('#stat'); if (st) { st.className = 'status ' + cls; st.textContent = label; }
+    renderEnd(e); updateStats();
+  }
+  function renderEnd(e) {
+    const end = $('#end'); if (!end || !e) return;
+    const fl = Object.values(state.flags).sort((a, b) => a.i - b.i);
+    const nw = (e.newWords || []); const so = (e.storyOnly || []);
+    const soLem = new Set(so.map(x => x.w.toLowerCase()));
+    const done = state.progress[e.id] && state.progress[e.id].finishedAt;
+    end.innerHTML = '<div class="rowx"><button class="btn ' + (done ? '' : 'green') + '" id="finish">' + (done ? 'Zurück auf „Am Lesen"' : 'Fertig gelesen') + '</button>' + (done ? '<span class="ok">gelesen am ' + esc(String(done).slice(0, 10)) + '</span>' : '') + '</div>'
+      + '<h3>Markiert (' + fl.length + ')</h3>' + (fl.length ? '<div class="words">' + fl.map(f => '<span class="f' + (soLem.has((f.w || '').toLowerCase()) ? ' so' : '') + '"' + (f.en ? ' title="' + esc(f.en) + '"' : '') + '>' + esc(f.phrase || f.w) + '</span>').join('') + '</div>' : '<p class="ok">Noch nichts markiert. Das ist auch ein Ergebnis.</p>')
+      + '<h3>Neue Wörter in dieser Folge (' + nw.length + ')</h3>' + (nw.length ? '<div class="words">' + nw.map(w => '<span>' + esc(w) + '</span>').join('') + '</div><div class="rowx"><button class="btn" id="copy">Liste kopieren</button></div>' : '')
+      + (so.length ? '<h3>Nur für die Geschichte (' + so.length + ')</h3><div class="words">' + so.map(x => '<span class="so">' + esc(x.w) + '</span>').join('') + '</div><p class="so-why">' + so.map(x => esc(x.w) + ': ' + esc(x.why)).join(' · ') + '</p>' : '')
+      + ((e.terms || []).length ? '<h3>' + esc(e.termsTitle || 'Begriffe') + ' – kein Deutsch, nicht minen (' + e.terms.length + ')</h3><div class="words">' + e.terms.map(x => '<span class="so" title="' + esc(x.why) + '">' + esc(x.w) + '</span>').join('') + '</div><p class="so-why">' + e.terms.map(x => esc(x.w) + ': ' + esc(x.why)).join(' · ') + '</p>' : '');
+    $('#finish').onclick = () => finish(e);
+    const c = $('#copy'); if (c) c.onclick = () => { const txt = nw.join('\n');
+      const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); say('Kopiert'); } catch (x) { say('Bitte markieren und kopieren'); } ta.remove(); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => say('Kopiert'), fb); else fb(); };
+  }
+
+  // ---------- mark toggle ----------
+  const tg = $('#marktoggle');
+  function setMark(on) { state.mark = on; tg.classList.toggle('on', on); tg.setAttribute('aria-checked', on); document.body.classList.toggle('mark', on); lsSet('mark', on); }
+  tg.onclick = () => setMark(!state.mark);
+  tg.onkeydown = (ev) => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); setMark(!state.mark); } };
+  setMark(lsGet('mark', true));
+  const lt = $('#lighttoggle');
+  function setLight(on) { document.documentElement.classList.toggle('light', on); lt.classList.toggle('on', on); lt.setAttribute('aria-checked', on); lsSet('light', on); }
+  lt.onclick = () => setLight(!lt.classList.contains('on'));
+  lt.onkeydown = (ev) => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); setLight(!lt.classList.contains('on')); } };
+  setLight(lsGet('light', false));
+
+  // ---------- routing ----------
+  // ---------- Bereiche (domain word lists) ----------
+  const DOM = '/api/domains';
+  function setNav(which) { $('#nav-home').classList.toggle('active', which === 'home'); $('#nav-dom').classList.toggle('active', which === 'dom'); }
+  function loadDomains() {
+    if (state.domains) return Promise.resolve(state.domains);
+    return fetch(DOM).then(r => { if (!r.ok) throw new Error(r.status); return caches.open('lesezimmer-data').then(c => c.put(DOM, r.clone())).catch(() => {}).then(() => r.json()); })
+      .catch(() => caches.match(DOM).then(hit => { if (!hit) throw new Error('no cache'); return hit.json(); }))
+      .then(d => { state.domains = d; $('#dom-count').textContent = d.length; return d; });
+  }
+  function domainsHome() {
+    state.current = null; setNav('dom'); document.title = 'Bereiche · Lesezimmer';
+    main.innerHTML = '<div class="head"><h1>Bereiche</h1><span class="sub">Wortschatz nach Lebensbereich: was du schon kennst, was gerade dran ist, was fehlt.</span></div><div class="board" id="dlist"><div class="empty">Lade…</div></div>';
+    loadDomains().then(ds => {
+      const tot = ds.reduce((a, d) => a + d.total, 0), kn = ds.reduce((a, d) => a + d.known, 0);
+      $('#dlist').innerHTML = ds.map(d => '<a class="drow" href="#bereich/' + esc(d.slug) + '"><span><div class="t">' + esc(d.title) + '</div><div class="d">' + esc(d.description) + '</div></span>'
+        + '<span class="bar"><i style="width:' + d.pct + '%"></i></span><span class="pct">' + d.pct + ' %<small>' + d.known + ' / ' + d.total + '</small></span></a>').join('')
+        + '<div class="drow" style="cursor:default"><span class="t">Gesamt</span><span class="bar"><i style="width:' + (tot ? Math.round(100 * kn / tot) : 0) + '%"></i></span><span class="pct">' + (tot ? Math.round(100 * kn / tot) : 0) + ' %<small>' + kn + ' / ' + tot + '</small></span></div>';
+    }).catch(() => { $('#dlist').innerHTML = '<div class="empty">Noch keine Bereichslisten (reader/domains/*.json).</div>'; });
+  }
+  function domainPage(slug) {
+    state.current = null; setNav('dom');
+    loadDomains().then(ds => {
+      const d = ds.find(x => x.slug === slug); if (!d) { domainsHome(); return; }
+      document.title = d.title + ' · Lesezimmer';
+      const only = lsGet('dom:only', false);
+      const chips = (f) => d.words.filter(w => !f || w.s !== 'known').map(w => '<span class="chip2 ' + w.s + '"><span>' + esc(w.w) + '</span>' + (w.g ? '<span class="g">' + esc(w.g) + '</span>' : '') + '</span>').join('');
+      main.innerHTML = '<div class="head"><button class="btn" id="back">← Bereiche</button><h1>' + esc(d.title) + '</h1><span class="spacer"></span><button class="btn" id="copyunk">Fehlende kopieren</button></div>'
+        + '<p class="howto" style="margin-top:0">' + esc(d.description) + '</p>'
+        + '<div class="bar" style="height:10px;margin:14px 0 6px"><i style="width:' + d.pct + '%"></i></div>'
+        + '<div class="legend"><span><b>' + d.pct + ' %</b> · ' + d.known + ' von ' + d.total + ' bekannt</span><span><i class="k"></i>bekannt (Migaku)</span><span><i class="l"></i>in Arbeit (in den Folgen)</span><span><i></i>fehlt noch</span>'
+        + '<label style="margin-left:auto;cursor:pointer"><input type="checkbox" id="onlyunk"' + (only ? ' checked' : '') + '> nur fehlende</label></div>'
+        + '<div class="chips" id="chips">' + chips(only) + '</div>';
+      $('#back').onclick = () => { location.hash = 'bereiche'; };
+      $('#onlyunk').onchange = (ev) => { lsSet('dom:only', ev.target.checked); $('#chips').innerHTML = chips(ev.target.checked); };
+      $('#copyunk').onclick = () => { const t = d.words.filter(w => w.s !== 'known').map(w => w.w).join('\n'); navigator.clipboard.writeText(t).then(() => say('Fehlende Wörter kopiert')).catch(() => say('Kopieren ging nicht')); };
+    }).catch(() => domainsHome());
+  }
+  function route() {
+    const h = (location.hash || '').replace(/^#/, '');
+    if (h === 'bereiche') { domainsHome(); return; }
+    if (h.startsWith('bereich/')) { domainPage(h.slice(8)); return; }
+    setNav('home');
+    if (h && state.episodes.some(e => e.id === h)) openEpisode(h); else home();
+  }
+  window.addEventListener('hashchange', route);
+  $('#home-link').onclick = (ev) => { ev.preventDefault(); location.hash = ''; };
+  $('#nav-home').onclick = (ev) => { ev.preventDefault(); location.hash = ''; };
+  $('#nav-dom').onclick = (ev) => { ev.preventDefault(); location.hash = 'bereiche'; };
+  let st; window.addEventListener('scroll', () => { if (!state.current) return; clearTimeout(st); st = setTimeout(() => lsSet('scroll:' + state.current, window.scrollY), 300); }, { passive: true });
+
+  // ---------- boot ----------
+  // newest record per episode wins, so flags made on the other computer and flags made here both survive
+  const newer = (a, b) => (!a ? b : !b ? a : ((b.updatedAt || '') > (a.updatedAt || '') ? b : a));
+  state.stumbles = lsGet(LS.stumbles, {}); state.progress = lsGet(LS.progress, {}); state.outbox = lsGet(LS.outbox, {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  syncStatus(); home();
+  // story list: served by the server when it is up, otherwise the copy stored in the browser's Cache storage
+  const EP = '/api/episodes';
+  const loadEpisodes = () => fetch(EP).then(r => { if (!r.ok) throw new Error(r.status); return caches.open('lesezimmer-data').then(c => c.put(EP, r.clone())).catch(() => {}).then(() => r.json()); })
+    .catch(() => caches.match(EP).then(hit => { if (!hit) throw new Error('no cache'); return hit.json(); }));
+  loadEpisodes().then(eps => { state.episodes = eps; route(); }).catch(() => route());
+  loadDomains().catch(() => {});
+  api('/api/state').then(st => {
+    // local outbox entries are newer than anything on disk by definition; everything else merges by time
+    const mine = new Set(Object.keys(state.outbox));
+    for (const kind of ['stumbles', 'progress']) for (const [id, rec] of Object.entries(st[kind] || {})) if (!mine.has(kind + '/' + id)) state[kind][id] = newer(state[kind][id], rec);
+    state.online = true; persist(); syncStatus(); updateStats();
+    if (state.current) openEpisode(state.current); else if (!(location.hash || '').includes('bereich')) home();
+    flush();
+  }).catch(() => { state.online = false; syncStatus(); if (!state.episodes.length) home(); });
+})();
+</script>
+</body>
+</html>
